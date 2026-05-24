@@ -1,0 +1,807 @@
+{% extends "base.html" %}
+
+{% block title %}设备管理 - 百香果智能土壤分析系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📡 设备管理</h1>
+    <p class="page-subtitle">传感器设备注册、绑定与数据上传</p>
+</div>
+
+<div class="devices-page">
+    <!-- 操作按钮区 -->
+    <div class="devices-actions">
+        <button class="btn btn-primary" onclick="showRegisterModal()">+ 注册新设备</button>
+        <button class="btn btn-secondary" onclick="showUploadModal()">📤 模拟上传数据</button>
+    </div>
+
+    <!-- 设备列表 -->
+    <div class="devices-grid" id="devicesGrid">
+        <div class="card">
+            <div class="card-content" style="text-align:center;padding:3rem;">
+                <p style="color:#6b7280;">正在加载设备列表...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     注册设备弹窗
+     ================================================================ -->
+<div class="modal-overlay" id="registerModal" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>注册新设备</h2>
+            <button class="modal-close" onclick="hideRegisterModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="registerForm" onsubmit="submitRegister(event)">
+                <div class="form-group">
+                    <label>设备名称 <span style="color:red;">*</span></label>
+                    <input type="text" id="regName" class="form-input" placeholder="例如: 一号试验田传感器" required>
+                </div>
+                <div class="form-group">
+                    <label>设备编码 <span style="color:red;">*</span></label>
+                    <input type="text" id="regCode" class="form-input" placeholder="例如: ESP32-001" required>
+                </div>
+                <div class="form-group">
+                    <label>设备类型</label>
+                    <select id="regType" class="form-input">
+                        <option value="sensor">土壤传感器</option>
+                        <option value="esp32">ESP32</option>
+                        <option value="bluetooth">蓝牙设备</option>
+                        <option value="android">Android App</option>
+                        <option value="simulator">模拟器</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>绑定地块</label>
+                    <select id="regField" class="form-input">
+                        <option value="">-- 不绑定 --</option>
+                        {% for f in fields %}
+                        <option value="{{ f.id }}">{{ f.field_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideRegisterModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" id="regSubmitBtn">确认注册</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     模拟上传弹窗
+     ================================================================ -->
+<div class="modal-overlay" id="uploadModal" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>模拟传感器上传数据</h2>
+            <button class="modal-close" onclick="hideUploadModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="uploadForm" onsubmit="submitUpload(event)">
+                <div class="form-group">
+                    <label>选择设备 <span style="color:red;">*</span></label>
+                    <select id="uploadDeviceCode" class="form-input" required>
+                        <option value="">-- 请选择设备 --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>pH 值</label>
+                        <input type="number" id="uploadPh" class="form-input" step="0.1" placeholder="6.0">
+                    </div>
+                    <div class="form-group">
+                        <label>氮 N (mg/kg)</label>
+                        <input type="number" id="uploadN" class="form-input" step="0.1" placeholder="85">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>磷 P (mg/kg)</label>
+                        <input type="number" id="uploadP" class="form-input" step="0.1" placeholder="45">
+                    </div>
+                    <div class="form-group">
+                        <label>钾 K (mg/kg)</label>
+                        <input type="number" id="uploadK" class="form-input" step="0.1" placeholder="200">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>湿度 (%)</label>
+                        <input type="number" id="uploadHum" class="form-input" step="0.1" placeholder="25">
+                    </div>
+                    <div class="form-group">
+                        <label>温度 (°C)</label>
+                        <input type="number" id="uploadTemp" class="form-input" step="0.1" placeholder="26">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>EC (μS/cm)</label>
+                        <input type="number" id="uploadEc" class="form-input" step="0.1" placeholder="1200">
+                    </div>
+                    <div class="form-group">
+                        <label>有机质 (%)</label>
+                        <input type="number" id="uploadOm" class="form-input" step="0.01" placeholder="3.5">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>生长阶段</label>
+                    <select id="uploadStage" class="form-input">
+                        <option value="">-- 未知 --</option>
+                        <option value="seedling">幼苗期</option>
+                        <option value="vine">伸蔓期</option>
+                        <option value="flowering">开花期</option>
+                        <option value="fruiting">坐果期</option>
+                        <option value="expansion">果实膨大期</option>
+                        <option value="harvest">采收期</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:0.5rem;">
+                        <input type="checkbox" id="uploadAutoAnalyze" checked>
+                        自动触发 AI 土壤分析
+                    </label>
+                </div>
+                <!-- 快捷填充按钮 -->
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="fillSampleData('normal')" style="font-size:0.8125rem;">📊 正常数据</button>
+                    <button type="button" class="btn btn-secondary" onclick="fillSampleData('acid')" style="font-size:0.8125rem;">⚠️ 酸性过强</button>
+                    <button type="button" class="btn btn-secondary" onclick="fillSampleData('salt')" style="font-size:0.8125rem;">🚨 高盐胁迫</button>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideUploadModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">上传数据</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     样式
+     ================================================================ -->
+<style>
+/* 页面布局 */
+.devices-page { max-width: 1000px; margin: 0 auto; }
+
+.devices-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* 设备卡片网格 */
+.devices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+/* 单个设备卡片 */
+.device-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.device-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.device-card-header {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f3f4f6;
+    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+}
+
+.device-name-area {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.device-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #dcfce7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.device-name {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #166534;
+}
+
+.device-code {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-family: monospace;
+}
+
+/* 状态指示灯 */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.375rem;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.online { background: #22c55e; }
+.status-dot.offline { background: #d1d5db; animation: none; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.status-text.online { color: #16a34a; }
+.status-text.offline { color: #9ca3af; }
+
+.device-card-body {
+    padding: 1.25rem 1.5rem;
+}
+
+.device-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f9fafb;
+    font-size: 0.875rem;
+}
+
+.device-info-row:last-child {
+    border-bottom: none;
+}
+
+.device-info-label {
+    color: #6b7280;
+}
+
+.device-info-value {
+    color: #374151;
+    font-weight: 500;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 最新读数预览 */
+.latest-reading-preview {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.latest-reading-preview .reading-item {
+    text-align: center;
+}
+
+.latest-reading-preview .reading-val {
+    font-weight: 700;
+    color: #166534;
+    font-size: 0.9375rem;
+}
+
+.latest-reading-preview .reading-label {
+    color: #9ca3af;
+    margin-top: 0.125rem;
+}
+
+.device-card-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.device-card-footer .btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+    text-align: center;
+}
+
+/* 弹窗 */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-card {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-body .form-group {
+    margin-bottom: 1rem;
+}
+
+.modal-body .form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.375rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    color: #111827;
+    background: white;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.modal-body .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+/* 空状态 */
+.devices-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+    grid-column: 1 / -1;
+}
+
+.devices-empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+.devices-empty h3 { color: #374151; font-size: 1.125rem; margin-bottom: 0.5rem; }
+.devices-empty p { color: #6b7280; font-size: 0.9375rem; }
+
+/* 响应式 */
+@media (max-width: 640px) {
+    .devices-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .latest-reading-preview { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+
+    /* ================================================================
+       页面初始化
+       ================================================================ */
+    function init() {
+        loadDevices();
+    }
+
+    /* ================================================================
+       设备列表加载
+       ================================================================ */
+    function loadDevices() {
+        fetch('/api/device/list')
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    renderDevices(res.data || []);
+                } else {
+                    showMsg(res.message || '加载失败', 'error');
+                }
+            })
+            .catch(function(e) {
+                console.error('加载设备列表失败:', e);
+                showMsg('网络错误', 'error');
+            });
+    }
+
+    function renderDevices(devices) {
+        var grid = document.getElementById('devicesGrid');
+        if (!grid) return;
+
+        if (devices.length === 0) {
+            grid.innerHTML =
+                '<div class="devices-empty">' +
+                '<div class="devices-empty-icon">📡</div>' +
+                '<h3>暂无设备</h3>' +
+                '<p>点击「注册新设备」添加传感器设备</p>' +
+                '</div>';
+            return;
+        }
+
+        grid.innerHTML = devices.map(function(d) {
+            var isOnline = d.status === 'online';
+            var typeIconMap = {
+                sensor: '🌡️', esp32: '🔌', bluetooth: '📶',
+                android: '📱', simulator: '💻'
+            };
+            var typeNameMap = {
+                sensor: '土壤传感器', esp32: 'ESP32',
+                bluetooth: '蓝牙设备', android: 'Android App',
+                simulator: '模拟器'
+            };
+
+            var latestHtml = '';
+            if (d.last_reading_time) {
+                latestHtml =
+                    '<div class="device-info-row">' +
+                    '<span class="device-info-label">最近数据</span>' +
+                    '<span class="device-info-value">' + formatTime(d.last_reading_time) + '</span>' +
+                    '</div>';
+            }
+
+            return '<div class="device-card" data-id="' + d.id + '">' +
+                '<div class="device-card-header">' +
+                    '<div class="device-name-area">' +
+                        '<div class="device-icon">' + (typeIconMap[d.device_type] || '📡') + '</div>' +
+                        '<div>' +
+                            '<div class="device-name">' + escHtml(d.device_name) + '</div>' +
+                            '<div class="device-code">' + escHtml(d.device_code) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<span class="status-dot ' + (isOnline ? 'online' : 'offline') + '"></span>' +
+                        '<span class="status-text ' + (isOnline ? 'online' : 'offline') + '">' +
+                            (isOnline ? '在线' : '离线') +
+                        '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="device-card-body">' +
+                    '<div class="device-info-row">' +
+                        '<span class="device-info-label">设备类型</span>' +
+                        '<span class="device-info-value">' + (typeNameMap[d.device_type] || d.device_type) + '</span>' +
+                    '</div>' +
+                    '<div class="device-info-row">' +
+                        '<span class="device-info-label">绑定地块</span>' +
+                        '<span class="device-info-value">' + (d.field_name || '未绑定') + '</span>' +
+                    '</div>' +
+                    '<div class="device-info-row">' +
+                        '<span class="device-info-label">最后在线</span>' +
+                        '<span class="device-info-value">' + (d.last_online_time ? formatTime(d.last_online_time) : '从未上线') + '</span>' +
+                    '</div>' +
+                    latestHtml +
+                '</div>' +
+                '<div class="device-card-footer">' +
+                    '<button class="btn btn-primary" onclick="openUploadForDevice(\'' + escAttr(d.device_code) + '\')">📤 上传数据</button>' +
+                    '<button class="btn btn-secondary" onclick="deleteDevice(' + d.id + ')">🗑 删除</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    /* ================================================================
+       注册设备
+       ================================================================ */
+    window.showRegisterModal = function() {
+        document.getElementById('registerModal').style.display = 'flex';
+        document.getElementById('regName').value = '';
+        document.getElementById('regCode').value = '';
+        document.getElementById('regType').value = 'sensor';
+        document.getElementById('regField').value = '';
+    };
+
+    window.hideRegisterModal = function() {
+        document.getElementById('registerModal').style.display = 'none';
+    };
+
+    window.submitRegister = function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('regSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = '注册中...';
+
+        var data = {
+            device_name: document.getElementById('regName').value.trim(),
+            device_code: document.getElementById('regCode').value.trim(),
+            device_type: document.getElementById('regType').value,
+            field_id: parseInt(document.getElementById('regField').value) || null,
+        };
+
+        fetch('/api/device/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            btn.disabled = false;
+            btn.textContent = '确认注册';
+            if (res.success) {
+                showMsg('设备注册成功！', 'success');
+                hideRegisterModal();
+                loadDevices();
+            } else {
+                showMsg(res.message || '注册失败', 'error');
+            }
+        })
+        .catch(function(e) {
+            btn.disabled = false;
+            btn.textContent = '确认注册';
+            showMsg('网络错误', 'error');
+        });
+    };
+
+    /* ================================================================
+       模拟上传数据
+       ================================================================ */
+    window.showUploadModal = function() {
+        // 加载设备下拉列表
+        fetch('/api/device/list')
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                var select = document.getElementById('uploadDeviceCode');
+                select.innerHTML = '<option value="">-- 请选择设备 --</option>';
+                if (res.success && res.data) {
+                    res.data.forEach(function(d) {
+                        select.innerHTML += '<option value="' + escAttr(d.device_code) + '">' +
+                            escHtml(d.device_name) + ' (' + d.device_code + ')</option>';
+                    });
+                }
+            });
+
+        // 清空表单
+        ['uploadPh','uploadN','uploadP','uploadK','uploadHum','uploadTemp','uploadEc','uploadOm'].forEach(function(id) {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('uploadStage').value = '';
+        document.getElementById('uploadAutoAnalyze').checked = true;
+        document.getElementById('uploadModal').style.display = 'flex';
+    };
+
+    window.openUploadForDevice = function(deviceCode) {
+        showUploadModal();
+        setTimeout(function() {
+            document.getElementById('uploadDeviceCode').value = deviceCode;
+        }, 300);
+    };
+
+    window.hideUploadModal = function() {
+        document.getElementById('uploadModal').style.display = 'none';
+    };
+
+    /* 快捷填充样本数据 */
+    window.fillSampleData = function(type) {
+        var samples = {
+            normal:  { ph: '6.0', n: '80', p: '45', k: '280', hum: '25', temp: '26', ec: '1200', om: '3.5', stage: 'expansion' },
+            acid:    { ph: '4.2', n: '90', p: '50', k: '150', hum: '28', temp: '24', ec: '1000', om: '2.8', stage: 'seedling' },
+            salt:    { ph: '7.2', n: '45', p: '25', k: '120', hum: '18', temp: '24', ec: '3200', om: '0.8', stage: 'harvest' },
+        };
+        var s = samples[type];
+        if (!s) return;
+        document.getElementById('uploadPh').value = s.ph;
+        document.getElementById('uploadN').value = s.n;
+        document.getElementById('uploadP').value = s.p;
+        document.getElementById('uploadK').value = s.k;
+        document.getElementById('uploadHum').value = s.hum;
+        document.getElementById('uploadTemp').value = s.temp;
+        document.getElementById('uploadEc').value = s.ec;
+        document.getElementById('uploadOm').value = s.om;
+        document.getElementById('uploadStage').value = s.stage;
+    };
+
+    window.submitUpload = function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('uploadSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = '上传中...';
+
+        var data = {
+            device_code: document.getElementById('uploadDeviceCode').value,
+            ph: parseFloat(document.getElementById('uploadPh').value) || null,
+            nitrogen: parseFloat(document.getElementById('uploadN').value) || null,
+            phosphorus: parseFloat(document.getElementById('uploadP').value) || null,
+            potassium: parseFloat(document.getElementById('uploadK').value) || null,
+            humidity: parseFloat(document.getElementById('uploadHum').value) || null,
+            temperature: parseFloat(document.getElementById('uploadTemp').value) || null,
+            ec: parseFloat(document.getElementById('uploadEc').value) || null,
+            organic_matter: parseFloat(document.getElementById('uploadOm').value) || null,
+            growth_stage: document.getElementById('uploadStage').value || null,
+            auto_analyze: document.getElementById('uploadAutoAnalyze').checked,
+        };
+
+        fetch('/api/device/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            btn.disabled = false;
+            btn.textContent = '上传数据';
+            if (res.success) {
+                var msg = '数据上传成功！';
+                if (res.record_id) {
+                    msg += ' 分析记录 #' + res.record_id;
+                    if (res.risk_level) msg += ' (' + res.risk_level + ')';
+                }
+                if (res.alerts && res.alerts.length > 0) {
+                    msg += '\n⚠️ 预警: ' + res.alerts.map(function(a) { return a.name || a.level; }).join(', ');
+                }
+                showMsg(msg, res.alerts && res.alerts.length > 0 ? 'error' : 'success');
+                hideUploadModal();
+                loadDevices();
+            } else {
+                showMsg(res.message || '上传失败', 'error');
+            }
+        })
+        .catch(function(e) {
+            btn.disabled = false;
+            btn.textContent = '上传数据';
+            showMsg('网络错误', 'error');
+        });
+    };
+
+    /* ================================================================
+       删除设备
+       ================================================================ */
+    window.deleteDevice = function(deviceId) {
+        if (!confirm('确定要删除该设备吗？\n删除后关联的传感器读数也将被删除。')) return;
+
+        fetch('/api/device/' + deviceId, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    showMsg('设备已删除', 'success');
+                    loadDevices();
+                } else {
+                    showMsg(res.message || '删除失败', 'error');
+                }
+            })
+            .catch(function(e) {
+                showMsg('网络错误', 'error');
+            });
+    };
+
+    /* ================================================================
+       工具函数
+       ================================================================ */
+    function showMsg(msg, type) {
+        var el = document.createElement('div');
+        el.style.cssText =
+            'position:fixed;top:80px;right:20px;padding:0.75rem 1.25rem;border-radius:8px;' +
+            'font-size:0.9375rem;z-index:1001;animation:slideIn 0.3s ease;max-width:400px;white-space:pre-line;';
+        if (type === 'success') {
+            el.style.background = '#d1fae5'; el.style.color = '#065f46'; el.style.border = '1px solid #a7f3d0';
+        } else {
+            el.style.background = '#fee2e2'; el.style.color = '#991b1b'; el.style.border = '1px solid #fecaca';
+        }
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(function() {
+            el.style.animation = 'slideOut 0.3s ease';
+            setTimeout(function() { el.remove(); }, 300);
+        }, 4000);
+    }
+
+    function formatTime(ts) {
+        if (!ts) return '-';
+        try {
+            var d = new Date(ts);
+            if (isNaN(d.getTime())) return ts.slice(0, 16);
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            var h = String(d.getHours()).padStart(2, '0');
+            var min = String(d.getMinutes()).padStart(2, '0');
+            return m + '/' + day + ' ' + h + ':' + min;
+        } catch(e) { return ts; }
+    }
+
+    function escHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function escAttr(s) {
+        if (!s) return '';
+        return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    }
+
+    /* 添加动画样式 */
+    if (!document.getElementById('aniStyles')) {
+        var s = document.createElement('style');
+        s.id = 'aniStyles';
+        s.textContent =
+            '@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}' +
+            '@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}';
+        document.head.appendChild(s);
+    }
+
+    /* 点击弹窗外关闭 */
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'registerModal') hideRegisterModal();
+        if (e.target.id === 'uploadModal') hideUploadModal();
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+{% endblock %}

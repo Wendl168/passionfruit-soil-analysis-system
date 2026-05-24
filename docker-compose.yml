@@ -1,0 +1,26 @@
+# ============================================================
+# docker-compose.yml - 百香果智能土壤分析系统
+# ============================================================
+# 一键启动：
+#   docker-compose up -d
+#
+# 访问：
+#   http://localhost:5000
+# ============================================================
+
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: passionfruit-soil-system
+    ports:
+      - "5000:5000"
+    volumes:
+      # 持久化 SQLite 数据库
+      - ./data:/app/data
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - FLASK_SECRET_KEY=change-this-in-production
+    restart: unless-stopped

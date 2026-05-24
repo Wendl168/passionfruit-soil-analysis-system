@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}数据大屏 - 百香果智能土壤分析系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">数据大屏</h1>
+    <p class="page-subtitle">实时监测百香果土壤健康状况</p>
+</div>
+
+<div class="dashboard-container">
+
+    <!-- 第一行：5 个核心指标卡片 -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-score">🎯</div>
+            <div class="kpi-body">
+                <div class="kpi-label">综合健康评分</div>
+                <div class="kpi-value" id="kpiScore">--</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-risk">⚡</div>
+            <div class="kpi-body">
+                <div class="kpi-label">风险等级</div>
+                <div class="kpi-value" id="kpiRisk">--</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-time">🕐</div>
+            <div class="kpi-body">
+                <div class="kpi-label">最近检测</div>
+                <div class="kpi-value kpi-value-sm" id="kpiTime">--</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-field">🌾</div>
+            <div class="kpi-body">
+                <div class="kpi-label">地块数量</div>
+                <div class="kpi-value" id="kpiFields">--</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-count">📋</div>
+            <div class="kpi-body">
+                <div class="kpi-label">检测总数</div>
+                <div class="kpi-value" id="kpiRecords">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二行：最近检测数据 + 快捷操作 -->
+    <div class="dash-row-2">
+        <!-- 最近一次检测 8 项指标 -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3 class="dash-card-title">🧪 最近一次检测数据</h3>
+                <a href="/history" class="view-all">查看全部 →</a>
+            </div>
+            <div class="metrics-grid metrics-8col" id="metricsGrid">
+                <div class="metric-item"><div class="metric-label">pH</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">氮 N</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">磷 P</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">钾 K</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">湿度</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">温度</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">EC</div><div class="metric-value">--</div></div>
+                <div class="metric-item"><div class="metric-label">有机质</div><div class="metric-value">--</div></div>
+            </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="dash-card dash-card-actions">
+            <div class="dash-card-header">
+                <h3 class="dash-card-title">⚡ 快捷操作</h3>
+            </div>
+            <div class="quick-grid">
+                <a href="/input" class="action-card">
+                    <div class="action-icon primary">📝</div>
+                    <div class="action-content"><h3>录入数据</h3><p>提交土壤检测</p></div>
+                </a>
+                <a href="/history" class="action-card">
+                    <div class="action-icon secondary">📊</div>
+                    <div class="action-content"><h3>查看历史</h3><p>检测记录</p></div>
+                </a>
+                <a href="/fields" class="action-card">
+                    <div class="action-icon success">🌾</div>
+                    <div class="action-content"><h3>地块管理</h3><p>种植地块</p></div>
+                </a>
+                <a href="/assistant" class="action-card">
+                    <div class="action-icon ai">🤖</div>
+                    <div class="action-content"><h3>AI 助手</h3><p>智能问答</p></div>
+                </a>
+                <a href="/history" class="action-card" onclick="setTimeout(function(){window.exportAllHistory&&window.exportAllHistory()},100)">
+                    <div class="action-icon export">📤</div>
+                    <div class="action-content"><h3>导出报告</h3><p>Excel 报表</p></div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第三行：4 个图表 -->
+    <div class="dash-charts-4">
+        <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">📈 pH 值趋势</h3></div>
+            <div class="chart-wrap"><canvas id="phTrendChart"></canvas></div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">📊 综合评分趋势</h3></div>
+            <div class="chart-wrap"><canvas id="scoreTrendChart"></canvas></div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">🧪 最近一次 NPK</h3></div>
+            <div class="chart-wrap"><canvas id="npkBarChart"></canvas></div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">⚠️ 风险等级分布</h3></div>
+            <div class="chart-wrap"><canvas id="riskPieChart"></canvas></div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

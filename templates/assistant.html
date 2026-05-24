@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+
+{% block title %}AI 百香果种植助手 - 百香果智能土壤分析系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🤖 AI 百香果种植助手</h1>
+    <p class="page-subtitle">基于土壤数据的智能种植问答系统</p>
+</div>
+
+<div class="assistant-container">
+    <!-- 输入区域 -->
+    <div class="assistant-input-section">
+        <div class="input-card">
+            <div class="form-group">
+                <label class="form-label">选择参考检测记录（可选）</label>
+                <select id="recordSelect" class="form-input">
+                    <option value="">-- 不选择记录 --</option>
+                </select>
+                <span class="form-hint">选择记录后，AI 会结合土壤数据给出更精准的建议</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">您的问题</label>
+                <textarea id="questionInput" class="form-textarea" rows="4" 
+                    placeholder="例如：土壤pH偏低怎么办？钾不足怎么补充？开花期怎么管理？"></textarea>
+            </div>
+            
+            <div class="quick-questions">
+                <span class="quick-label">快速提问：</span>
+                <div class="quick-tags" id="quickTags">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+            
+            <button class="btn btn-primary btn-large" onclick="askQuestion()" id="askBtn">
+                💬 提问
+            </button>
+        </div>
+    </div>
+
+    <!-- 回答区域 -->
+    <div class="assistant-answer-section" id="answerSection" style="display: none;">
+        <div class="answer-card">
+            <div class="answer-header">
+                <span class="answer-category" id="answerCategory">--</span>
+                <span class="answer-time" id="answerTime"></span>
+            </div>
+            
+            <!-- 问题判断 -->
+            <div class="answer-block">
+                <h4 class="block-title">🔍 问题判断</h4>
+                <p class="block-content" id="judgment">--</p>
+            </div>
+            
+            <!-- 结合土壤分析（如果有） -->
+            <div class="answer-block" id="soilAnalysisBlock" style="display: none;">
+                <h4 class="block-title">📊 结合您的土壤数据分析</h4>
+                <div class="soil-findings" id="soilFindings"></div>
+            </div>
+            
+            <!-- 原因解释 -->
+            <div class="answer-block">
+                <h4 class="block-title">📖 原因解释</h4>
+                <p class="block-content" id="cause">--</p>
+            </div>
+            
+            <!-- 处理建议 -->
+            <div class="answer-block">
+                <h4 class="block-title">💡 处理建议</h4>
+                <ul class="suggestion-list" id="suggestions"></ul>
+            </div>
+            
+            <!-- 注意事项 -->
+            <div class="answer-block">
+                <h4 class="block-title">⚠️ 注意事项</h4>
+                <ul class="warning-list" id="warnings"></ul>
+            </div>
+            
+            <!-- 下次检测建议 -->
+            <div class="answer-block">
+                <h4 class="block-title">📅 下次检测建议</h4>
+                <p class="block-content" id="nextTest">--</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div class="assistant-empty" id="emptyState">
+        <div class="empty-icon">🌱</div>
+        <h3>有问题就问 AI 助手</h3>
+        <p>输入您关于百香果种植的问题，获取专业的种植建议</p>
+        <div class="example-questions">
+            <div class="example-item">💧 湿度过高怎么处理？</div>
+            <div class="example-item">🌸 开花期怎么管理？</div>
+            <div class="example-item">🍈 果实膨大期怎么施肥？</div>
+        </div>
+    </div>
+</div>
+
+<style>
+.assistant-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 输入区域 */
+.assistant-input-section {
+    margin-bottom: 2rem;
+}
+
+.input-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+}
+
+.quick-questions {
+    margin: 1rem 0;
+}
+
+.quick-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.quick-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.quick-tag {
+    background: #f0fdf4;
+    color: #166534;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border: 1px solid #bbf7d0;
+    transition: all 0.2s;
+}
+
+.quick-tag:hover {
+    background: #dcfce7;
+    transform: translateY(-1px);
+}
+
+.btn-large {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+/* 回答区域 */
+.assistant-answer-section {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.answer-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.answer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.answer-category {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    padding: 0.375rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.answer-time {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.answer-block {
+    margin-bottom: 1.5rem;
+}
+
+.answer-block:last-child {
+    margin-bottom: 0;
+}
+
+.block-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.block-content {
+    color: #4b5563;
+    line-height: 1.7;
+    font-size: 0.9375rem;
+}
+
+.suggestion-list,
+.warning-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.suggestion-list li,
+.warning-list li {
+    padding: 0.625rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    color: #4b5563;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    border-bottom: 1px dashed #f3f4f6;
+}
+
+.suggestion-list li:last-child,
+.warning-list li:last-child {
+    border-bottom: none;
+}
+
+.suggestion-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #22c55e;
+    font-weight: bold;
+}
+
+.warning-list li::before {
+    content: "⚠";
+    position: absolute;
+    left: 0;
+    color: #f59e0b;
+}
+
+/* 土壤分析块 */
+.soil-findings {
+    background: #f0fdf4;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.soil-finding-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed #bbf7d0;
+}
+
+.soil-finding-item:last-child {
+    border-bottom: none;
+}
+
+.soil-finding-icon {
+    font-size: 1.25rem;
+}
+
+.soil-finding-text {
+    flex: 1;
+    color: #166534;
+    font-size: 0.9375rem;
+}
+
+.soil-finding-rec {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #bbf7d0;
+    color: #166534;
+    font-weight: 500;
+}
+
+/* 空状态 */
+.assistant-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.assistant-empty h3 {
+    font-size: 1.25rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.assistant-empty p {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.example-questions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.example-item {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.example-item:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+/* 加载状态 */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f4f6;
+    border-top-color: #22c55e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+    .input-card,
+    .answer-card {
+        padding: 1rem;
+    }
+    
+    .answer-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .quick-tags {
+        gap: 0.375rem;
+    }
+    
+    .quick-tag {
+        font-size: 0.8125rem;
+        padding: 0.25rem 0.625rem;
+    }
+}
+</style>
+
+<script>
+// 快速问题列表
+var quickQuestions = [
+    "pH偏低怎么办？",
+    "pH偏高怎么办？",
+    "钾不足怎么补充？",
+    "湿度过高怎么处理？",
+    "湿度过低怎么灌溉？",
+    "EC值过高怎么办？",
+    "有机质低怎么改良？",
+    "开花期怎么管理？",
+    "果实膨大期怎么施肥？",
+    "坐果期要注意什么？"
+];
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initQuickTags();
+    loadRecentRecords();
+});
+
+// 初始化快速标签
+function initQuickTags() {
+    var container = document.getElementById('quickTags');
+    if (!container) return;
+    
+    quickQuestions.forEach(function(q) {
+        var tag = document.createElement('span');
+        tag.className = 'quick-tag';
+        tag.textContent = q;
+        tag.onclick = function() {
+            document.getElementById('questionInput').value = q;
+        };
+        container.appendChild(tag);
+    });
+}
+
+// 加载最近检测记录
+function loadRecentRecords() {
+    fetch('/api/soil/history?limit=50', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success && result.data) {
+            var select = document.getElementById('recordSelect');
+            result.data.forEach(function(record) {
+                var option = document.createElement('option');
+                option.value = record.id;
+                var time = record.sample_time || record.created_at || '';
+                var fieldName = record.field_name || '未关联地块';
+                option.textContent = '#' + record.id + ' - ' + fieldName + ' (' + time.substring(0, 16) + ')';
+                select.appendChild(option);
+            });
+        }
+    })
+    .catch(function(e) {
+        console.error('加载记录失败:', e);
+    });
+}
+
+// 提问
+function askQuestion() {
+    var question = document.getElementById('questionInput').value.trim();
+    var recordId = document.getElementById('recordSelect').value;
+    var btn = document.getElementById('askBtn');
+    
+    if (!question) {
+        alert('请输入您的问题');
+        return;
+    }
+    
+    // 显示加载状态
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> 思考中...';
+    
+    var data = { question: question };
+    if (recordId) {
+        data.record_id = parseInt(recordId);
+    }
+    
+    fetch('/api/assistant/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        btn.disabled = false;
+        btn.innerHTML = '💬 提问';
+        
+        if (result.success) {
+            displayAnswer(result.data);
+        } else {
+            alert('获取回答失败：' + result.message);
+        }
+    })
+    .catch(function(e) {
+        btn.disabled = false;
+        btn.innerHTML = '💬 提问';
+        alert('网络错误，请稍后重试');
+    });
+}
+
+// 显示回答
+function displayAnswer(data) {
+    // 隐藏空状态，显示回答区域
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('answerSection').style.display = 'block';
+    
+    // 填充内容
+    document.getElementById('answerCategory').textContent = data.category || '种植咨询';
+    document.getElementById('answerTime').textContent = new Date().toLocaleString();
+    document.getElementById('judgment').textContent = data.answer.judgment;
+    document.getElementById('cause').textContent = data.answer.cause;
+    document.getElementById('nextTest').textContent = data.answer.next_test;
+    
+    // 处理建议
+    var suggestionsList = document.getElementById('suggestions');
+    suggestionsList.innerHTML = '';
+    data.answer.suggestions.forEach(function(item) {
+        var li = document.createElement('li');
+        li.textContent = item;
+        suggestionsList.appendChild(li);
+    });
+    
+    // 注意事项
+    var warningsList = document.getElementById('warnings');
+    warningsList.innerHTML = '';
+    data.answer.warnings.forEach(function(item) {
+        var li = document.createElement('li');
+        li.textContent = item;
+        warningsList.appendChild(li);
+    });
+    
+    // 土壤分析（如果有）
+    var soilBlock = document.getElementById('soilAnalysisBlock');
+    if (data.soil_analysis && data.soil_analysis.has_record) {
+        soilBlock.style.display = 'block';
+        var findingsDiv = document.getElementById('soilFindings');
+        findingsDiv.innerHTML = '';
+        
+        // 显示发现
+        if (data.soil_analysis.findings && data.soil_analysis.findings.length > 0) {
+            data.soil_analysis.findings.forEach(function(finding) {
+                var item = document.createElement('div');
+                item.className = 'soil-finding-item';
+                item.innerHTML = '<span class="soil-finding-icon">📊</span><span class="soil-finding-text">' + finding + '</span>';
+                findingsDiv.appendChild(item);
+            });
+        }
+        
+        // 显示建议
+        if (data.soil_analysis.recommendations && data.soil_analysis.recommendations.length > 0) {
+            var recDiv = document.createElement('div');
+            recDiv.className = 'soil-finding-rec';
+            recDiv.innerHTML = '<strong>💡 建议：</strong>' + data.soil_analysis.recommendations.join('；');
+            findingsDiv.appendChild(recDiv);
+        }
+    } else {
+        soilBlock.style.display = 'none';
+    }
+    
+    // 滚动到回答区域
+    document.getElementById('answerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 点击示例问题
+document.querySelectorAll('.example-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+        var text = this.textContent.replace(/^[^\s]+\s/, '');
+        document.getElementById('questionInput').value = text;
+    });
+});
+</script>
+{% endblock %}

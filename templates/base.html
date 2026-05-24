@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>{% block title %}百香果智能土壤分析系统{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+    <div class="navbar-inner">
+        <a href="/" class="navbar-brand">
+            <span class="navbar-brand-icon">🥝</span>
+            <span class="navbar-brand-text">百香果土壤分析</span>
+        </a>
+
+        <!-- 桌面端导航 -->
+        <div class="nav-links">
+            {% if current_user %}
+            <a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">数据大屏</a>
+            <a href="/input" class="nav-link {% if request.endpoint == 'input_page' %}active{% endif %}">数据录入</a>
+            <a href="/history" class="nav-link {% if request.endpoint == 'history_page' %}active{% endif %}">历史记录</a>
+            <a href="/fields" class="nav-link {% if request.endpoint == 'fields_page' %}active{% endif %}">地块管理</a>
+            <a href="/assistant" class="nav-link {% if request.endpoint == 'assistant_page' %}active{% endif %}">AI 助手</a>
+            {% if current_user.role == 'admin' %}
+            <a href="/devices" class="nav-link {% if request.endpoint == 'devices_page' %}active{% endif %}">设备管理</a>
+            <a href="/admin" class="nav-link {% if request.endpoint == 'admin_page' %}active{% endif %}">管理</a>
+            {% endif %}
+            <span class="nav-link user-info">
+                <span class="user-avatar">{{ current_user.username[0] }}</span>
+                <span class="user-name">{{ current_user.username }}</span>
+                {% if current_user.role == 'admin' %}
+                <span class="user-role admin-badge">管理员</span>
+                {% endif %}
+                <a href="/logout" class="logout-link">退出</a>
+            </span>
+            {% else %}
+            <a href="/login" class="nav-link">登录</a>
+            <a href="/register" class="nav-link">注册</a>
+            {% endif %}
+        </div>
+
+        <!-- 汉堡菜单按钮 -->
+        <button class="nav-hamburger" id="navHamburger" aria-label="菜单">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+
+    <!-- 移动端下拉菜单 -->
+    <div class="nav-mobile-menu" id="navMobileMenu">
+        {% if current_user %}
+        <a href="/" class="nav-link">数据大屏</a>
+        <a href="/input" class="nav-link">数据录入</a>
+        <a href="/history" class="nav-link">历史记录</a>
+        <a href="/fields" class="nav-link">地块管理</a>
+        <a href="/assistant" class="nav-link">AI 助手</a>
+        {% if current_user.role == 'admin' %}
+        <a href="/devices" class="nav-link">设备管理</a>
+        <a href="/admin" class="nav-link">管理</a>
+        {% endif %}
+        <div class="nav-mobile-divider"></div>
+        <span class="nav-link mobile-user">👤 {{ current_user.username }}</span>
+        <a href="/logout" class="nav-link">退出登录</a>
+        {% else %}
+        <a href="/login" class="nav-link">登录</a>
+        <a href="/register" class="nav-link">注册</a>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- 主内容 -->
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- 页脚 -->
+<footer class="footer">
+    百香果智能土壤分析系统 &copy; 2024 | AI 驱动的智慧农业
+</footer>
+
+<!-- Chart.js 图表库 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+
+<style>
+/* 用户信息导航样式 */
+.user-info {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem !important;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50px;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+}
+.user-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+}
+.user-role {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 50px;
+    font-weight: 600;
+}
+.admin-badge {
+    background: #f59e0b;
+    color: white;
+}
+.logout-link {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    margin-left: 0.25rem;
+    transition: color 0.2s;
+}
+.logout-link:hover {
+    color: #fca5a5;
+    text-decoration: underline;
+}
+.nav-mobile-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.15);
+    margin: 0.5rem 1rem;
+}
+.mobile-user {
+    color: rgba(255,255,255,0.6) !important;
+    font-size: 0.8125rem !important;
+    cursor: default !important;
+}
+</style>
+
+<script>
+// 汉堡菜单逻辑
+(function() {
+    var hamburger = document.getElementById('navHamburger');
+    var mobileMenu = document.getElementById('navMobileMenu');
+
+    if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', function() {
+            hamburger.classList.toggle('open');
+            mobileMenu.classList.toggle('show');
+        });
+
+        mobileMenu.querySelectorAll('.nav-link').forEach(function(link) {
+            link.addEventListener('click', function() {
+                hamburger.classList.remove('open');
+                mobileMenu.classList.remove('show');
+            });
+        });
+    }
+})();
+</script>
+
+</body>
+</html>

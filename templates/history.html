@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}历史记录 - 百香果智能土壤分析系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">历史检测记录</h1>
+    <p class="page-subtitle">查看所有土壤检测历史数据</p>
+</div>
+
+<div class="history-container">
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label class="filter-label">所属地块</label>
+            <select id="filterField" class="filter-select">
+                <option value="">全部地块</option>
+                {% if fields %}
+                    {% for field in fields %}
+                    <option value="{{ field.id }}">{{ field.field_name }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">风险等级</label>
+            <select id="filterRisk" class="filter-select">
+                <option value="">全部</option>
+                <option value="低风险">低风险</option>
+                <option value="中风险">中风险</option>
+                <option value="高风险">高风险</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">生长阶段</label>
+            <select id="filterStage" class="filter-select">
+                <option value="">全部</option>
+                <option value="seedling">幼苗期</option>
+                <option value="vine">伸蔓期</option>
+                <option value="flowering">开花期</option>
+                <option value="fruiting">坐果期</option>
+                <option value="expansion">果实膨大期</option>
+                <option value="harvest">采收期</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button id="btnFilter" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">筛选</button>
+            <button id="btnReset" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">重置</button>
+        </div>
+        <button id="btnExportAll" class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="exportAllHistory()">
+            📊 导出全部
+        </button>
+        <a href="/input" class="btn btn-primary" style="margin-left: auto;">
+            <span>+ 新增检测</span>
+        </a>
+    </div>
+
+    <div class="history-header">
+        <h2 class="history-title">📊 检测记录列表</h2>
+        <span class="record-count" id="recordCount"></span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table" id="historyTable">
+            <thead>
+                <tr>
+                    <th>检测时间</th>
+                    <th>生长阶段</th>
+                    <th>pH</th>
+                    <th>氮 (N)</th>
+                    <th>磷 (P)</th>
+                    <th>钾 (K)</th>
+                    <th>健康评分</th>
+                    <th>风险等级</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="9" style="text-align:center; padding:3rem; color:#9ca3af;">加载中...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

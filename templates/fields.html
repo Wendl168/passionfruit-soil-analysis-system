@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}地块管理 - 百香果智能土壤分析系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">地块管理</h1>
+    <p class="page-subtitle">管理您的百香果种植地块信息</p>
+</div>
+
+<div class="fields-container">
+    <!-- 操作栏 -->
+    <div class="fields-toolbar">
+        <button class="btn btn-primary" onclick="showFieldModal()">
+            <span>+</span> 新增地块
+        </button>
+    </div>
+
+    <!-- 地块列表 -->
+    <div class="fields-grid" id="fieldsGrid">
+        {% if fields %}
+            {% for field in fields %}
+            <div class="field-card" data-id="{{ field.id }}">
+                <div class="field-card-header">
+                    <h3 class="field-name">{{ field.field_name }}</h3>
+                    <div class="field-actions">
+                        <button class="btn-icon" onclick="editField({{ field.id }})" title="编辑">✏️</button>
+                        <button class="btn-icon" onclick="deleteField({{ field.id }}, '{{ field.field_name }}')" title="删除">🗑️</button>
+                    </div>
+                </div>
+                <div class="field-info">
+                    {% if field.location %}
+                    <div class="field-info-item">
+                        <span class="label">📍 位置：</span>
+                        <span class="value">{{ field.location }}</span>
+                    </div>
+                    {% endif %}
+                    {% if field.area %}
+                    <div class="field-info-item">
+                        <span class="label">📐 面积：</span>
+                        <span class="value">{{ field.area }} 亩</span>
+                    </div>
+                    {% endif %}
+                    {% if field.soil_type %}
+                    <div class="field-info-item">
+                        <span class="label">🌱 土壤类型：</span>
+                        <span class="value">{{ field.soil_type }}</span>
+                    </div>
+                    {% endif %}
+                    {% if field.passionfruit_variety %}
+                    <div class="field-info-item">
+                        <span class="label">🥝 百香果品种：</span>
+                        <span class="value">{{ field.passionfruit_variety }}</span>
+                    </div>
+                    {% endif %}
+                    {% if field.planting_date %}
+                    <div class="field-info-item">
+                        <span class="label">📅 种植日期：</span>
+                        <span class="value">{{ field.planting_date }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if field.remark %}
+                <div class="field-remark">
+                    <span class="label">📝 备注：</span>
+                    <span class="value">{{ field.remark }}</span>
+                </div>
+                {% endif %}
+                <div class="field-footer">
+                    <span class="record-count">检测记录：{{ field.record_count or 0 }} 条</span>
+                    <a href="/history?field_id={{ field.id }}" class="btn btn-secondary btn-sm">查看记录</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🌾</div>
+                <h3>暂无地块</h3>
+                <p>点击上方"新增地块"按钮创建您的第一个种植地块</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 地块编辑模态框 -->
+<div class="modal" id="fieldModal" style="display: none;">
+    <div class="modal-overlay" onclick="closeFieldModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增地块</h3>
+            <button class="modal-close" onclick="closeFieldModal()">&times;</button>
+        </div>
+        <form id="fieldForm" class="modal-body">
+            <input type="hidden" id="fieldId" value="">
+            <div class="form-group">
+                <label class="form-label" for="fieldName">地块名称 <span class="required">*</span></label>
+                <input type="text" class="form-input" id="fieldName" name="field_name" required placeholder="例如：一号地块">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="fieldLocation">地块位置</label>
+                <input type="text" class="form-input" id="fieldLocation" name="location" placeholder="例如：村东头">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="fieldArea">面积（亩）</label>
+                    <input type="number" class="form-input" id="fieldArea" name="area" step="0.1" min="0" placeholder="例如：5">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="fieldSoilType">土壤类型</label>
+                    <input type="text" class="form-input" id="fieldSoilType" name="soil_type" placeholder="例如：红壤">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="fieldVariety">百香果品种</label>
+                    <input type="text" class="form-input" id="fieldVariety" name="passionfruit_variety" placeholder="例如：紫香一号">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="fieldPlantingDate">种植日期</label>
+                    <input type="date" class="form-input" id="fieldPlantingDate" name="planting_date">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="fieldRemark">备注</label>
+                <textarea class="form-textarea" id="fieldRemark" name="remark" rows="3" placeholder="其他备注信息..."></textarea>
+            </div>
+        </form>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeFieldModal()">取消</button>
+            <button type="button" class="btn btn-primary" onclick="saveField()">保存</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.fields-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.fields-toolbar {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.field-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.field-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.field-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.field-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.field-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.125rem;
+    padding: 0.25rem;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.btn-icon:hover {
+    opacity: 1;
+}
+
+.field-info {
+    margin-bottom: 1rem;
+}
+
+.field-info-item {
+    display: flex;
+    padding: 0.375rem 0;
+    font-size: 0.9375rem;
+}
+
+.field-info-item .label {
+    color: #6b7280;
+    min-width: 6rem;
+}
+
+.field-info-item .value {
+    color: #374151;
+    font-weight: 500;
+}
+
+.field-remark {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+.field-remark .label {
+    color: #6b7280;
+}
+
+.field-remark .value {
+    color: #4b5563;
+}
+
+.field-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+.record-count {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* 模态框样式 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #111827;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+}
+
+.required {
+    color: #ef4444;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .fields-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// 地块数据缓存
+var _fieldsData = {};
+
+// 显示模态框
+function showFieldModal() {
+    document.getElementById('fieldModal').style.display = 'flex';
+    document.getElementById('modalTitle').textContent = '新增地块';
+    document.getElementById('fieldForm').reset();
+    document.getElementById('fieldId').value = '';
+}
+
+// 关闭模态框
+function closeFieldModal() {
+    document.getElementById('fieldModal').style.display = 'none';
+}
+
+// 编辑地块
+function editField(fieldId) {
+    fetch('/api/fields/' + fieldId, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success) {
+            var field = result.data;
+            document.getElementById('fieldModal').style.display = 'flex';
+            document.getElementById('modalTitle').textContent = '编辑地块';
+            document.getElementById('fieldId').value = field.id;
+            document.getElementById('fieldName').value = field.field_name || '';
+            document.getElementById('fieldLocation').value = field.location || '';
+            document.getElementById('fieldArea').value = field.area || '';
+            document.getElementById('fieldSoilType').value = field.soil_type || '';
+            document.getElementById('fieldVariety').value = field.passionfruit_variety || '';
+            document.getElementById('fieldPlantingDate').value = field.planting_date || '';
+            document.getElementById('fieldRemark').value = field.remark || '';
+        } else {
+            alert('获取地块信息失败：' + result.message);
+        }
+    })
+    .catch(function(e) {
+        alert('网络错误，请稍后重试');
+    });
+}
+
+// 保存地块
+function saveField() {
+    var fieldId = document.getElementById('fieldId').value;
+    var data = {
+        field_name: document.getElementById('fieldName').value.trim(),
+        location: document.getElementById('fieldLocation').value.trim(),
+        area: parseFloat(document.getElementById('fieldArea').value) || null,
+        soil_type: document.getElementById('fieldSoilType').value.trim(),
+        passionfruit_variety: document.getElementById('fieldVariety').value.trim(),
+        planting_date: document.getElementById('fieldPlantingDate').value,
+        remark: document.getElementById('fieldRemark').value.trim()
+    };
+    
+    if (!data.field_name) {
+        alert('请输入地块名称');
+        return;
+    }
+    
+    var url = fieldId ? '/api/fields/' + fieldId : '/api/fields';
+    var method = fieldId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success) {
+            alert(fieldId ? '地块更新成功' : '地块创建成功');
+            window.location.reload();
+        } else {
+            alert('保存失败：' + result.message);
+        }
+    })
+    .catch(function(e) {
+        alert('网络错误，请稍后重试');
+    });
+}
+
+// 删除地块
+function deleteField(fieldId, fieldName) {
+    if (!confirm('确定要删除地块 "' + fieldName + '" 吗？\n\n注意：删除后，该地块的历史检测记录将变为未关联状态。')) {
+        return;
+    }
+    
+    fetch('/api/fields/' + fieldId, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success) {
+            alert('地块删除成功');
+            window.location.reload();
+        } else {
+            alert('删除失败：' + result.message);
+        }
+    })
+    .catch(function(e) {
+        alert('网络错误，请稍后重试');
+    });
+}
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFieldModal();
+    }
+});
+</script>
+{% endblock %}

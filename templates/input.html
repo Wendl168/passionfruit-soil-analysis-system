@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}数据录入 - 百香果智能土壤分析系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">土壤数据录入</h1>
+    <p class="page-subtitle">填写检测数据，获取 AI 智能分析</p>
+</div>
+
+<div class="form-container">
+    <form id="soilForm" class="form-card">
+        <!-- 基本信息 -->
+        <div class="form-section">
+            <h2 class="form-section-title">📋 基本信息</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="field_id">所属地块</label>
+                    <select id="field_id" name="field_id" class="form-input">
+                        <option value="">-- 请选择地块 --</option>
+                        {% if fields %}
+                            {% for field in fields %}
+                            <option value="{{ field.id }}">{{ field.field_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    <span class="form-hint">
+                        没有地块？<a href="/fields" target="_blank">去创建地块</a>
+                    </span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="sample_time">采样时间</label>
+                    <input type="datetime-local" id="sample_time" name="sample_time" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="growth_stage">百香果生长阶段</label>
+                    <select id="growth_stage" name="growth_stage" class="form-input">
+                        <option value="">请选择生长阶段</option>
+                        <option value="seedling">🌱 幼苗期</option>
+                        <option value="vine">🌿 伸蔓期</option>
+                        <option value="flowering">🌸 开花期</option>
+                        <option value="fruiting">🍃 坐果期</option>
+                        <option value="expansion">🍈 果实膨大期</option>
+                        <option value="harvest">✂️ 采收期</option>
+                    </select>
+                    <span class="form-hint">不同生长阶段分析侧重点不同</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 化学指标 -->
+        <div class="form-section">
+            <h2 class="form-section-title">🧪 化学指标</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="ph">pH 值</label>
+                    <input type="number" id="ph" name="ph" class="form-input" 
+                           step="0.1" min="0" max="14" placeholder="5.5 - 6.5">
+                    <span class="form-hint">适宜范围: 5.5 - 6.5</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="nitrogen">氮 (N) mg/kg</label>
+                    <input type="number" id="nitrogen" name="nitrogen" class="form-input" 
+                           step="1" min="0" placeholder="60 - 150">
+                    <span class="form-hint">适宜范围: 60 - 150</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phosphorus">磷 (P) mg/kg</label>
+                    <input type="number" id="phosphorus" name="phosphorus" class="form-input" 
+                           step="1" min="0" placeholder="15 - 60">
+                    <span class="form-hint">适宜范围: 15 - 60</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="potassium">钾 (K) mg/kg</label>
+                    <input type="number" id="potassium" name="potassium" class="form-input" 
+                           step="1" min="0" placeholder="100 - 250">
+                    <span class="form-hint">适宜范围: 100 - 250</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="organic_matter">有机质 %</label>
+                    <input type="number" id="organic_matter" name="organic_matter" class="form-input" 
+                           step="0.1" min="0" placeholder="2.0 - 5.0">
+                    <span class="form-hint">适宜范围: 2.0 - 5.0</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ec">电导率 (EC) μS/cm</label>
+                    <input type="number" id="ec" name="ec" class="form-input" 
+                           step="1" min="0" placeholder="500 - 2000">
+                    <span class="form-hint">适宜范围: 500 - 2000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 物理指标 -->
+        <div class="form-section">
+            <h2 class="form-section-title">🌡️ 物理指标</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="humidity">土壤湿度 %</label>
+                    <input type="number" id="humidity" name="humidity" class="form-input" 
+                           step="0.1" min="0" max="100" placeholder="20 - 30">
+                    <span class="form-hint">适宜范围: 20 - 30%</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="temperature">土壤温度 °C</label>
+                    <input type="number" id="temperature" name="temperature" class="form-input" 
+                           step="0.1" placeholder="20 - 30">
+                    <span class="form-hint">适宜范围: 20 - 30°C</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提交按钮 -->
+        <div class="form-actions">
+            <button type="reset" class="btn btn-secondary">重置</button>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <span>🚀 开始 AI 分析</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
